@@ -36,7 +36,6 @@
 - name: PostgreSQL | Reset the cluster - drop the existing one | Debian
   shell: pg_dropcluster --stop {{ postgresql_version }} {{ postgresql_cluster_name }}
   become: yes
-  become_user: "{{ postgresql_service_user }}"
   when: ansible_os_family == "Debian" and postgresql_cluster_reset and pgdata_dir_exist.changed
 
 - name: PostgreSQL | Reset the cluster - create a new one (with specified encoding and locale) | Debian
@@ -45,7 +44,6 @@
     -e {{ postgresql_encoding }} -d {{ postgresql_data_directory }}
     {{ postgresql_version }} {{ postgresql_cluster_name }}
   become: yes
-  become_user: "{{ postgresql_service_user }}"
   when: ansible_os_family == "Debian" and postgresql_cluster_reset and pgdata_dir_exist.changed
 
 - name: PostgreSQL | Check whether the postgres data directory is initialized
@@ -56,10 +54,10 @@
 
 - name: PostgreSQL | Initialize the database | RedHat
   command: >
-    {{ postgresql_bin_directory }}/initdb -D {{ postgresql_data_directory }}
-    --locale={{ postgresql_locale }} --encoding={{ postgresql_encoding }}
+    sudo -u {{ postgresql_service_user }} {{ postgresql_bin_directory }}/initdb -D
+    {{ postgresql_data_directory }} --locale={{ postgresql_locale }}
+    --encoding={{ postgresql_encoding }}
   become: yes
-  become_user: "{{ postgresql_service_user }}"
   when: ansible_os_family == "RedHat" and
         (postgresql_cluster_reset or
          pgdata_dir_exist.changed or
